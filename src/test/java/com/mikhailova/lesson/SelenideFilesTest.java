@@ -1,30 +1,19 @@
-package guru.qa;
+package com.mikhailova.lesson;
+
 
 import com.codeborne.pdftest.PDF;
-import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Configuration;
-import com.codeborne.selenide.FileDownloadMode;
-import com.codeborne.selenide.Selenide;
 import com.codeborne.xlstest.XLS;
 import com.opencsv.CSVReader;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import net.lingala.zip4j.ZipFile;
 import org.junit.jupiter.api.Test;
-import org.opentest4j.AssertionFailedError;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static com.codeborne.selenide.Condition.text;
 import static com.codeborne.selenide.Selectors.byText;
@@ -35,13 +24,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SelenideFilesTest {
 
     @Test
-    void downloadFileTest(String arg) throws Exception {
+    void downloadFileTest() throws Exception {
         open("https://github.com/selenide/selenide/blob/master/README.md");
         File download = $("#raw-url").download();
         String result;
-
         try (InputStream is = new FileInputStream(download)) {
-            result = new String(is.readAllBytes(), "UTF-8");
+            result = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }
         assertThat(result).contains("Selenide = UI Testing Framework powered by Selenium WebDriver");
     }
@@ -67,10 +55,10 @@ public class SelenideFilesTest {
     void downloadExcelTest() throws Exception {
 //        Selenide.open("https://junit.org/junit5/docs/current/user-guide/");
 //        File download = $(byText("PDF download")).download();
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("175.xlsx")) {
-            XLS parsed = new XLS(stream);
-            assertThat(parsed.excel.getSheetAt(1).getRow(4).getCell(1).getStringCellValue())
-                    .isEqualTo("Алешина Ольга Валентиновна");
+        try (InputStream inputStream  = getClass().getClassLoader().getResourceAsStream("175.xlsx")) {
+            XLS parsed = new XLS(inputStream);
+            assertThat(parsed.excel.getSheetAt(1).getRow(22).getCell(1).getStringCellValue())
+                    .isEqualTo("Зацепина Ольга Владимировна");
         }
     }
 
@@ -82,26 +70,20 @@ public class SelenideFilesTest {
         List<String[]> strings = reader.readAll();
 
         assertThat(strings).contains(
-                new String[] {"lector", "lecture"},
-                new String[] {"Tuchs", "JUnit"},
-                new String[] {"Eroshenko", "Allure"}
+                new String[] {"actor", "film"},
+                new String[] {"D. Tennant", "Doctor Who"},
+                new String[] {"Alisa Milano", "Charmed"}
         );
     }
 
     @Test
-    void parseZipFileTest() throws Exception {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("zip_2MB.zip")) {
-            ZipInputStream zis = new ZipInputStream(is);
-            ZipEntry entry;
-
-            while((entry = zis.getNextEntry()) != null) {
-                System.out.println(entry.getName());
-            }
- //           for text zipped files
-//            Scanner sc = new Scanner(zis);
-//            while (sc.hasNext()) {
-//                System.out.println(sc.nextLine());
-//            }
+    public void parseZipFileTest() throws Exception {
+        String zipPassword = "qwer123";
+        ZipFile zipFile = new ZipFile(new File("src/test/resources/test.zip"));
+        if (zipFile.isEncrypted())
+        {
+            zipFile.setPassword(zipPassword.toCharArray());
         }
+        assertThat(zipFile.getFileHeaders().toString()).containsIgnoringCase("test.txt");
     }
 }
